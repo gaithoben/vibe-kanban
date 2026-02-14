@@ -1,12 +1,13 @@
 {
   "name": "@gaithoben/vibe-kanban",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "bin": {
     "vibe-kanban": "npx-cli/bin/cli.js"
   },
   "files": [
-    "npx-cli/bin/cli.js",
-    "npx-cli/dist/**"
+    "npx-cli/bin/",
+    "npx-cli/dist/",
+    "npx-cli/package.json"
   ],
   "scripts": {
     "lint": "pnpm run frontend:lint && pnpm run backend:lint",
@@ -34,6 +35,9 @@
     "remote:dev:clean": "cd crates/remote && docker compose --env-file .env.remote down -v",
     "remote:prepare-db": "cd crates/remote && bash scripts/prepare-db.sh",
     "remote:prepare-db:check": "cd crates/remote && bash scripts/prepare-db.sh --check"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

@@ -514,29 +514,41 @@ export function GeneralSettingsSection() {
           />
         </SettingsField>
 
-        <SettingsField
-          label={t('settings.general.git.workspaceDir.label')}
-          description={t('settings.general.git.workspaceDir.helper')}
-        >
-          <div className="flex gap-2">
-            <div className="flex-1">
-              <SettingsInput
-                value={draft?.workspace_dir ?? ''}
-                onChange={(value) =>
-                  updateDraft({ workspace_dir: value || null })
-                }
-                placeholder={t('settings.general.git.workspaceDir.placeholder')}
-              />
+        <SettingsCheckbox
+          id="use-worktrees"
+          label={t('settings.general.git.useWorktrees.label')}
+          description={t('settings.general.git.useWorktrees.helper')}
+          checked={draft?.use_worktrees ?? true}
+          onChange={(checked) => updateDraft({ use_worktrees: checked })}
+        />
+
+        {draft?.use_worktrees !== false && (
+          <SettingsField
+            label={t('settings.general.git.workspaceDir.label')}
+            description={t('settings.general.git.workspaceDir.helper')}
+          >
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <SettingsInput
+                  value={draft?.workspace_dir ?? ''}
+                  onChange={(value) =>
+                    updateDraft({ workspace_dir: value || null })
+                  }
+                  placeholder={t(
+                    'settings.general.git.workspaceDir.placeholder'
+                  )}
+                />
+              </div>
+              <PrimaryButton
+                variant="tertiary"
+                onClick={handleBrowseWorkspaceDir}
+              >
+                <FolderSimpleIcon className="size-icon-sm" weight="bold" />
+                {t('settings.general.git.workspaceDir.browse')}
+              </PrimaryButton>
             </div>
-            <PrimaryButton
-              variant="tertiary"
-              onClick={handleBrowseWorkspaceDir}
-            >
-              <FolderSimpleIcon className="size-icon-sm" weight="bold" />
-              {t('settings.general.git.workspaceDir.browse')}
-            </PrimaryButton>
-          </div>
-        </SettingsField>
+          </SettingsField>
+        )}
       </SettingsCard>
 
       {/* Pull Requests */}

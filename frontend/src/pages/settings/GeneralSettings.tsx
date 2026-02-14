@@ -477,35 +477,57 @@ export function GeneralSettings() {
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="workspace-dir">
-              {t('settings.general.git.workspaceDir.label')}
-            </Label>
-            <div className="flex space-x-2">
-              <Input
-                id="workspace-dir"
-                type="text"
-                placeholder={t('settings.general.git.workspaceDir.placeholder')}
-                value={draft?.workspace_dir ?? ''}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  updateDraft({ workspace_dir: value || null });
-                }}
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleBrowseWorkspaceDir}
-              >
-                <FolderOpen className="h-4 w-4 mr-2" />
-                {t('settings.general.git.workspaceDir.browse')}
-              </Button>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="use-worktrees"
+              checked={draft?.use_worktrees ?? true}
+              onCheckedChange={(checked: boolean) =>
+                updateDraft({ use_worktrees: checked })
+              }
+            />
+            <div className="space-y-0.5">
+              <Label htmlFor="use-worktrees" className="cursor-pointer">
+                {t('settings.general.git.useWorktrees.label')}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.general.git.useWorktrees.helper')}
+              </p>
             </div>
-            <p className="text-sm text-muted-foreground">
-              {t('settings.general.git.workspaceDir.helper')}
-            </p>
           </div>
+
+          {draft?.use_worktrees !== false && (
+            <div className="space-y-2">
+              <Label htmlFor="workspace-dir">
+                {t('settings.general.git.workspaceDir.label')}
+              </Label>
+              <div className="flex space-x-2">
+                <Input
+                  id="workspace-dir"
+                  type="text"
+                  placeholder={t(
+                    'settings.general.git.workspaceDir.placeholder'
+                  )}
+                  value={draft?.workspace_dir ?? ''}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    updateDraft({ workspace_dir: value || null });
+                  }}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleBrowseWorkspaceDir}
+                >
+                  <FolderOpen className="h-4 w-4 mr-2" />
+                  {t('settings.general.git.workspaceDir.browse')}
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t('settings.general.git.workspaceDir.helper')}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

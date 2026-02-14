@@ -176,6 +176,21 @@ impl LocalContainerService {
         };
         let workspace_dir = PathBuf::from(container_ref);
 
+        // If the container_ref points outside the workspace base dir, it's a
+        // non-worktree workspace (use_worktrees was false). Don't delete the
+        // user's original repo — just clear the reference.
+        let workspace_base_dir = WorkspaceManager::get_workspace_base_dir();
+        let is_worktree = workspace_dir.starts_with(&workspace_base_dir);
+
+        if !is_worktree {
+            tracing::info!(
+                "Workspace {} uses repo path directly (no worktree), skipping directory cleanup",
+                workspace.id
+            );
+            let _ = Workspace::clear_container_ref(&db.pool, workspace.id).await;
+            return;
+        }
+
         let repositories = WorkspaceRepo::find_repos_for_workspace(&db.pool, workspace.id)
             .await
             .unwrap_or_default();
@@ -1009,10 +1024,6 @@ impl ContainerService for LocalContainerService {
             .await?
             .ok_or(sqlx::Error::RowNotFound)?;
 
-        let workspace_dir_name =
-            LocalContainerService::dir_name_from_workspace(&workspace.id, &task.title);
-        let workspace_dir = WorkspaceManager::get_workspace_base_dir().join(&workspace_dir_name);
-
         let workspace_repos =
             WorkspaceRepo::find_by_workspace_id(&self.db.pool, workspace.id).await?;
         if workspace_repos.is_empty() {
@@ -1023,6 +1034,24 @@ impl ContainerService for LocalContainerService {
 
         let repositories =
             WorkspaceRepo::find_repos_for_workspace(&self.db.pool, workspace.id).await?;
+
+        let use_worktrees = self.config.read().await.use_worktrees;
+
+        if !use_worktrees {
+            // Skip worktree creation — use the first repo's original path directly
+            let repo = repositories
+                .first()
+                .ok_or_else(|| ContainerError::Other(anyhow!("No repositories found")))?;
+            let container_ref = repo.path.to_string_lossy().to_string();
+
+            Workspace::update_container_ref(&self.db.pool, workspace.id, &container_ref).await?;
+
+            return Ok(container_ref);
+        }
+
+        let workspace_dir_name =
+            LocalContainerService::dir_name_from_workspace(&workspace.id, &task.title);
+        let workspace_dir = WorkspaceManager::get_workspace_base_dir().join(&workspace_dir_name);
 
         let target_branches: HashMap<_, _> = workspace_repos
             .iter()
@@ -1084,6 +1113,23 @@ impl ContainerService for LocalContainerService {
             )));
         }
 
+        let use_worktrees = self.config.read().await.use_worktrees;
+
+        if !use_worktrees {
+            // Non-worktree mode: use the first repo's path directly
+            let repo = repositories
+                .first()
+                .ok_or_else(|| ContainerError::Other(anyhow!("No repositories found")))?;
+            let container_ref = repo.path.to_string_lossy().to_string();
+
+            if workspace.container_ref.is_none() {
+                Workspace::update_container_ref(&self.db.pool, workspace.id, &container_ref)
+                    .await?;
+            }
+
+            return Ok(container_ref);
+        }
+
         let workspace_dir = if let Some(container_ref) = &workspace.container_ref {
             PathBuf::from(container_ref)
         } else {
@@ -1124,6 +1170,17 @@ impl ContainerService for LocalContainerService {
 
         let workspace_dir = PathBuf::from(container_ref);
         if !workspace_dir.exists() {
+            return Ok(true);
+        }
+
+        let workspace_base_dir = WorkspaceManager::get_workspace_base_dir();
+        let is_worktree = workspace_dir.starts_with(&workspace_base_dir);
+
+        if !is_worktree {
+            // Non-worktree workspace: check the repo path directly
+            if !self.git().is_worktree_clean(&workspace_dir)? {
+                return Ok(false);
+            }
             return Ok(true);
         }
 

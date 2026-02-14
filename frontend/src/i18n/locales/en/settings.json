@@ -154,6 +154,10 @@
           "browse": "Browse",
           "dialogTitle": "Select Workspace Directory",
           "dialogDescription": "Choose a directory. Workspaces will be created in a .vibe-kanban-workspaces subdirectory within it."
+        },
+        "useWorktrees": {
+          "label": "Use git worktrees for workspaces",
+          "helper": "When enabled, each workspace creates a git worktree in a temporary directory. When disabled, the coding agent runs directly in the original repository directory."
         }
       },
       "pullRequests": {

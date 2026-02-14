@@ -44,5 +44,12 @@
     "node": ">=18",
     "pnpm": ">=8"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gaithoben/vibe-kanban.git"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  },
   "packageManager": "pnpm@10.13.1"
 }

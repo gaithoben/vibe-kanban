@@ -1,0 +1,2 @@
+# Intentionally empty to override .gitignore
+# This ensures dist/ zips are included in the npm publish tarball

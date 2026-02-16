@@ -518,7 +518,7 @@ export function GeneralSettingsSection() {
           id="use-worktrees"
           label={t('settings.general.git.useWorktrees.label')}
           description={t('settings.general.git.useWorktrees.helper')}
-          checked={draft?.use_worktrees ?? true}
+          checked={draft?.use_worktrees ?? false}
           onChange={(checked) => updateDraft({ use_worktrees: checked })}
         />
 

@@ -14,7 +14,7 @@ fn default_git_branch_prefix() -> String {
 }
 
 fn default_pr_auto_description_enabled() -> bool {
-    true
+    false
 }
 
 fn default_commit_reminder_enabled() -> bool {
@@ -22,7 +22,7 @@ fn default_commit_reminder_enabled() -> bool {
 }
 
 fn default_use_worktrees() -> bool {
-    true
+    false
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, TS, PartialEq, Eq)]
@@ -72,8 +72,8 @@ pub struct Config {
 
 impl Config {
     fn from_v7_config(old_config: v7::Config) -> Self {
-        // Convert Option<bool> to bool: None or Some(true) become true, Some(false) stays false
-        let analytics_enabled = old_config.analytics_enabled.unwrap_or(true);
+        // Convert Option<bool> to bool: default to false (opt-in)
+        let analytics_enabled = old_config.analytics_enabled.unwrap_or(false);
 
         Self {
             config_version: "v8".to_string(),
@@ -91,14 +91,14 @@ impl Config {
             language: old_config.language,
             git_branch_prefix: old_config.git_branch_prefix,
             showcases: old_config.showcases,
-            pr_auto_description_enabled: true,
+            pr_auto_description_enabled: false,
             pr_auto_description_prompt: None,
             beta_workspaces: false,
             beta_workspaces_invitation_sent: false,
             commit_reminder_enabled: true,
             commit_reminder_prompt: None,
             send_message_shortcut: SendMessageShortcut::default(),
-            use_worktrees: true,
+            use_worktrees: false,
         }
     }
 
@@ -140,14 +140,14 @@ impl Default for Config {
             notifications: NotificationConfig::default(),
             editor: EditorConfig::default(),
             github: GitHubConfig::default(),
-            analytics_enabled: true,
+            analytics_enabled: false,
             workspace_dir: None,
             last_app_version: None,
             show_release_notes: false,
             language: UiLanguage::default(),
             git_branch_prefix: default_git_branch_prefix(),
             showcases: ShowcaseState::default(),
-            pr_auto_description_enabled: true,
+            pr_auto_description_enabled: false,
             pr_auto_description_prompt: None,
             beta_workspaces: false,
             beta_workspaces_invitation_sent: false,

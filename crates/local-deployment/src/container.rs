@@ -1042,7 +1042,10 @@ impl ContainerService for LocalContainerService {
             let repo = repositories
                 .first()
                 .ok_or_else(|| ContainerError::Other(anyhow!("No repositories found")))?;
-            let container_ref = repo.path.to_string_lossy().to_string();
+            let container_ref = repo.path.parent()
+                .unwrap_or(&repo.path)
+                .to_string_lossy()
+                .to_string();
 
             Workspace::update_container_ref(&self.db.pool, workspace.id, &container_ref).await?;
 
@@ -1120,7 +1123,10 @@ impl ContainerService for LocalContainerService {
             let repo = repositories
                 .first()
                 .ok_or_else(|| ContainerError::Other(anyhow!("No repositories found")))?;
-            let container_ref = repo.path.to_string_lossy().to_string();
+            let container_ref = repo.path.parent()
+                .unwrap_or(&repo.path)
+                .to_string_lossy()
+                .to_string();
 
             if workspace.container_ref.is_none() {
                 Workspace::update_container_ref(&self.db.pool, workspace.id, &container_ref)
@@ -1403,9 +1409,25 @@ impl ContainerService for LocalContainerService {
         let container_ref = self.ensure_container_exists(workspace).await?;
         let workspace_root = PathBuf::from(container_ref);
 
+        let use_worktrees = self.config.read().await.use_worktrees;
+
         for repo in repositories {
             let worktree_path = workspace_root.join(&repo.name);
-            let branch = &workspace.branch;
+            let branch = if use_worktrees {
+                workspace.branch.clone()
+            } else {
+                match self.git().get_current_branch(&repo.path) {
+                    Ok(b) => b,
+                    Err(e) => {
+                        tracing::warn!(
+                            "Skipping diff stream for repo {}: failed to get current branch: {}",
+                            repo.name,
+                            e
+                        );
+                        continue;
+                    }
+                }
+            };
 
             let Some(target_branch) = target_branches.get(&repo.id) else {
                 tracing::warn!(
@@ -1417,7 +1439,7 @@ impl ContainerService for LocalContainerService {
 
             let base_commit = match self
                 .git()
-                .get_base_commit(&repo.path, branch, target_branch)
+                .get_base_commit(&repo.path, &branch, target_branch)
             {
                 Ok(c) => c,
                 Err(e) => {

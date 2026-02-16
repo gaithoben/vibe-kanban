@@ -480,7 +480,7 @@ export function GeneralSettings() {
           <div className="flex items-center space-x-2">
             <Checkbox
               id="use-worktrees"
-              checked={draft?.use_worktrees ?? true}
+              checked={draft?.use_worktrees ?? false}
               onCheckedChange={(checked: boolean) =>
                 updateDraft({ use_worktrees: checked })
               }

@@ -1,12 +1,16 @@
 use anyhow;
 use axum::{
-    Extension, Router,
+    BoxError, Extension, Router,
     extract::{
         Path, Query, State,
         ws::{WebSocket, WebSocketUpgrade},
     },
     middleware::from_fn_with_state,
-    response::{IntoResponse, Json as ResponseJson},
+    response::{
+        IntoResponse, Json as ResponseJson,
+        Sse,
+        sse::{Event, KeepAlive},
+    },
     routing::{get, post},
 };
 use db::models::{
@@ -56,6 +60,26 @@ pub async fn stream_raw_logs_ws(
             tracing::warn!("raw logs WS closed: {}", e);
         }
     }))
+}
+
+pub async fn stream_raw_logs_sse(
+    State(deployment): State<DeploymentImpl>,
+    Path(exec_id): Path<Uuid>,
+) -> Result<Sse<impl futures_util::Stream<Item = Result<Event, BoxError>>>, ApiError> {
+    let stream = deployment
+        .container()
+        .stream_raw_logs(&exec_id)
+        .await
+        .ok_or_else(|| {
+            ApiError::ExecutionProcess(ExecutionProcessError::ExecutionProcessNotFound)
+        })?;
+
+    Ok(Sse::new(
+        stream
+            .map_ok(|msg| msg.to_sse_event())
+            .map_err(|e| -> BoxError { e.into() }),
+    )
+    .keep_alive(KeepAlive::default()))
 }
 
 async fn handle_raw_logs_ws(
@@ -166,6 +190,26 @@ async fn handle_normalized_logs_ws(
     Ok(())
 }
 
+pub async fn stream_normalized_logs_sse(
+    State(deployment): State<DeploymentImpl>,
+    Path(exec_id): Path<Uuid>,
+) -> Result<Sse<impl futures_util::Stream<Item = Result<Event, BoxError>>>, ApiError> {
+    let stream = deployment
+        .container()
+        .stream_normalized_logs(&exec_id)
+        .await
+        .ok_or_else(|| {
+            ApiError::ExecutionProcess(ExecutionProcessError::ExecutionProcessNotFound)
+        })?;
+
+    Ok(Sse::new(
+        stream
+            .map_ok(|msg| msg.to_sse_event())
+            .map_err(|e| -> BoxError { e.into() }),
+    )
+    .keep_alive(KeepAlive::default()))
+}
+
 pub async fn stop_execution_process(
     Extension(execution_process): Extension<ExecutionProcess>,
     State(deployment): State<DeploymentImpl>,
@@ -249,7 +293,9 @@ pub fn router(deployment: &DeploymentImpl) -> Router<DeploymentImpl> {
         .route("/stop", post(stop_execution_process))
         .route("/repo-states", get(get_execution_process_repo_states))
         .route("/raw-logs/ws", get(stream_raw_logs_ws))
+        .route("/raw-logs/sse", get(stream_raw_logs_sse))
         .route("/normalized-logs/ws", get(stream_normalized_logs_ws))
+        .route("/normalized-logs/sse", get(stream_normalized_logs_sse))
         .layer(from_fn_with_state(
             deployment.clone(),
             load_execution_process_middleware,

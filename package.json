@@ -1,6 +1,6 @@
 {
   "name": "@gaithoben/vibe-kanban",
-  "version": "0.1.10",
+  "version": "0.1.19",
   "bin": {
     "vibe-kanban": "npx-cli/bin/cli.js"
   },

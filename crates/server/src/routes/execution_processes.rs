@@ -277,6 +277,17 @@ async fn handle_execution_processes_by_session_ws(
     Ok(())
 }
 
+pub async fn list_execution_processes_by_session(
+    State(deployment): State<DeploymentImpl>,
+    Query(query): Query<SessionExecutionProcessQuery>,
+) -> Result<ResponseJson<ApiResponse<Vec<ExecutionProcess>>>, ApiError> {
+    let pool = &deployment.db().pool;
+    let show_soft_deleted = query.show_soft_deleted.unwrap_or(false);
+    let processes =
+        ExecutionProcess::find_by_session_id(pool, query.session_id, show_soft_deleted).await?;
+    Ok(ResponseJson(ApiResponse::success(processes)))
+}
+
 pub async fn get_execution_process_repo_states(
     Extension(execution_process): Extension<ExecutionProcess>,
     State(deployment): State<DeploymentImpl>,
@@ -302,6 +313,7 @@ pub fn router(deployment: &DeploymentImpl) -> Router<DeploymentImpl> {
         ));
 
     let workspaces_router = Router::new()
+        .route("/by-session", get(list_execution_processes_by_session))
         .route(
             "/stream/session/ws",
             get(stream_execution_processes_by_session_ws),

@@ -245,21 +245,9 @@ impl LocalContainerService {
     }
 
     pub fn spawn_workspace_cleanup(&self) {
-        let db = self.db.clone();
-        let cleanup_expired = Self::cleanup_expired_workspaces;
-        tokio::spawn(async move {
-            WorkspaceManager::cleanup_orphan_workspaces(&db.pool).await;
-
-            let mut cleanup_interval =
-                tokio::time::interval(tokio::time::Duration::from_secs(1800)); // 30 minutes
-            loop {
-                cleanup_interval.tick().await;
-                tracing::info!("Starting periodic workspace cleanup...");
-                cleanup_expired(&db).await.unwrap_or_else(|e| {
-                    tracing::error!("Failed to clean up expired workspaces: {}", e)
-                });
-            }
-        });
+        // Disabled: periodic cleanup was deleting user directories when use_worktrees=false
+        // because container_ref pointed to the repo's parent directory (the user's project root).
+        tracing::info!("Workspace cleanup is disabled");
     }
 
     /// Record the current HEAD commit for each repository as the "after" state.

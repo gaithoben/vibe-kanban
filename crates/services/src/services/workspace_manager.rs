@@ -178,6 +178,15 @@ impl WorkspaceManager {
         workspace_dir: &Path,
         repos: &[Repo],
     ) -> Result<(), WorkspaceError> {
+        let workspace_base_dir = WorktreeManager::get_worktree_base_dir();
+        if !workspace_dir.starts_with(&workspace_base_dir) {
+            info!(
+                "Skipping cleanup of {} — outside workspace base dir, likely a user directory",
+                workspace_dir.display()
+            );
+            return Ok(());
+        }
+
         info!("Cleaning up workspace at {}", workspace_dir.display());
 
         let cleanup_data: Vec<WorktreeCleanup> = repos
